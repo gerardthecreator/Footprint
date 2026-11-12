@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#000000">
+<meta name="description" content="Footprint / Order Flow Pro para Binance Spot. Heatmap por delta, absorción, stacked imbalances, termómetro de presión neta y replay histórico.">
+<title>Footprint BTCUSDT · Order Flow Pro</title>
+
+<!-- Preconnect a endpoints de Binance (ahorra ~100ms en la primera petición) -->
+<link rel="preconnect" href="https://api.binance.com" crossorigin>
+<link rel="preconnect" href="https://data-api.binance.vision" crossorigin>
+
+<!-- CSS en orden estricto: tokens → layout → responsive -->
+<link rel="stylesheet" href="design.css">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="responsive.css">
+
+<!-- JS con defer para no bloquear el primer render. El orden importa: motor antes que UI. -->
+<script src="script.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+
+<!-- ==========================================================================
+     HEADER — Estado global, métricas clave y configuración activa
+     ========================================================================== -->
+<header id="app-header" role="banner">
+
+  <!-- Fila 1: Estado de conexión, símbolo, reloj dual, botón de tema -->
+  <div class="h-row h-row-1">
+    <div class="h-status">
+      <span class="dot" id="connDot" aria-hidden="true"></span>
+      <span id="connLabel" class="h-status-txt">Conectando…</span>
+    </div>
+
+    <h1 class="h-symbol">
+      <span id="symbolLabel">BTCUSDT</span>
+      <small>Footprint</small>
+    </h1>
+
+    <div class="h-clock" aria-live="off">
+      <span class="h-clock-local" id="clockLocal">--:--:--</span>
+      <span class="h-clock-utc" id="clockUtc">UTC --:--:--</span>
+    </div>
+
+    <div class="h-actions">
+      <button class="icon-btn" id="btnTheme" type="button" aria-label="Cambiar tema" title="Tema (claro/oscuro)">
+        <span data-theme-icon>🌓</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Fila 2: Métricas clave con POC dual, delta instantáneo y cobertura -->
+  <div class="h-row h-row-2">
+    <div class="metric">
+      <span class="metric-label">Precio</span>
+      <span class="metric-value h-price" id="priceEl">—</span>
+    </div>
+
+    <div class="metric" title="POC por volumen bruto total de la ventana">
+      <span class="metric-label">POC Vol</span>
+      <span class="metric-value poc" id="pocVolEl">—</span>
+    </div>
+
+    <div class="metric" title="POC por delta absoluto (mayor desequilibrio)">
+      <span class="metric-label">POC Δ</span>
+      <span class="metric-value poc" id="pocDeltaEl">—</span>
+    </div>
+
+    <div class="metric" title="Delta acumulado de la ventana completa">
+      <span class="metric-label">Δ 6m</span>
+      <span class="metric-value" id="deltaLongEl">0</span>
+    </div>
+
+    <div class="metric metric-instant" title="Delta de los últimos 1 segundo">
+      <span class="metric-label">Δ 1s</span>
+      <span class="metric-value" id="deltaInstEl">0</span>
+    </div>
+
+    <div class="metric">
+      <span class="metric-label">Trades</span>
+      <span class="metric-value" id="tradesCountEl">0</span>
+    </div>
+
+    <div class="metric">
+      <span class="metric-label">Vol 6m</span>
+      <span class="metric-value" id="volumeEl">·</span>
+    </div>
+
+    <div class="metric metric-coverage" id="coverageIndicator" title="Cobertura de datos de la ventana">
+      <span class="cov-dot" aria-hidden="true">●</span>
+      <span class="cov-txt" id="coverageTxt">—</span>
+    </div>
+  </div>
+
+  <!-- Fila 3: Pills de configuración activa -->
+  <div class="h-row h-row-3">
+    <button class="pill" id="pillBucket" type="button" title="Cambiar tamaño de casilla (B)">
+      Casilla <b id="pillBucketVal">20$</b>
+    </button>
+    <button class="pill" id="pillImb" type="button" title="Modo de imbalance (I)">
+      Imb <b id="pillImbVal">diag</b>
+    </button>
+    <button class="pill" id="pillMin" type="button" title="Mínimo USD por lado (M)">
+      Mín <b id="pillMinVal">25k</b>
+    </button>
+    <button class="pill" id="pillThr" type="button" title="Umbral de imbalance en % ( [ / ] )">
+      ≥ <b id="pillThrVal">300%</b>
+    </button>
+    <button class="pill pill-toggle" id="pillHeat" type="button" title="Heatmap de delta (H)" aria-pressed="true">
+      Heat <b>✓</b>
+    </button>
+    <button class="pill pill-toggle" id="pillBars" type="button" title="Barras laterales (V)" aria-pressed="true">
+      Bars <b>✓</b>
+    </button>
+    <button class="pill pill-toggle" id="pillThermo" type="button" title="Termómetro (T)" aria-pressed="true">
+      Thermo <b>✓</b>
+    </button>
+    <button class="pill pill-toggle" id="pillSound" type="button" title="Sonido / vibración (N)" aria-pressed="false">
+      Sonido <b>✗</b>
+    </button>
+  </div>
+</header>
+
+<!-- ==========================================================================
+     MAIN — Tabs live/hist y sus paneles
+     ========================================================================== -->
+<main id="app-main">
+
+  <!-- Tabs de modo -->
+  <nav class="mode-tabs" role="tablist" aria-label="Modo de operación">
+    <button role="tab" id="tabLive" aria-selected="true" aria-controls="panelLive" data-mode="live" type="button">
+      🟢 EN VIVO
+    </button>
+    <button role="tab" id="tabHist" aria-selected="false" aria-controls="panelHist" data-mode="hist" type="button">
+      🕰 HISTÓRICO
+    </button>
+  </nav>
+
+  <!-- ==================== PANEL EN VIVO ==================== -->
+  <section id="panelLive" class="mode-panel active" role="tabpanel" aria-labelledby="tabLive">
+    <div class="layout-main">
+
+      <!-- Tabla del footprint -->
+      <div class="table-wrap" id="liveTableWrap">
+        <div class="grid" id="liveGrid" role="table" aria-label="Footprint en vivo">
+          <!-- Cabecera y filas inyectadas por JS desde <template> -->
+        </div>
+        <div class="empty-state" id="liveEmpty" hidden>
+          <div class="spinner" aria-hidden="true"></div>
+          <p>Cargando datos iniciales…</p>
+        </div>
+      </div>
+
+      <!-- Termómetro de Presión Neta (2 barras + agotamiento) -->
+      <aside class="thermo" id="liveThermo" aria-label="Termómetro de presión neta en vivo">
+        <div class="thermo-cap">Presión Neta</div>
+
+        <div class="thermo-track thermo-acum" role="progressbar"
+             aria-label="Delta acumulado" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+          <div class="thermo-fill" id="thermoFillLive"></div>
+          <div class="thermo-center" aria-hidden="true"></div>
+        </div>
+
+        <div class="thermo-sub">Δ 6m</div>
+
+        <div class="thermo-track thermo-inst" role="progressbar"
+             aria-label="Delta instantáneo" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+          <div class="thermo-fill thermo-fill-inst" id="thermoFillInstLive"></div>
+          <div class="thermo-center" aria-hidden="true"></div>
+        </div>
+
+        <div class="thermo-sub">Δ 1s</div>
+
+        <div class="thermo-value" id="thermoValLive">0</div>
+        <div class="thermo-imb" id="thermoImbLive">—</div>
+        <div class="thermo-warn" id="thermoWarnLive" hidden>⚠ ABSORCIÓN</div>
+      </aside>
+    </div>
+
+    <footer class="panel-footer">
+      <div class="f-row">
+        <button class="chip" id="btnPauseLive" type="button" title="Pausar render (P)">⏸ Pausa</button>
+        <button class="chip" id="btnClearLive" type="button" title="Limpiar datos en memoria">🧹 Limpiar</button>
+        <span class="spacer"></span>
+        <span class="legend">
+          🚨 imbalance · 🔥 stacked · 🟡 absorción · ★ POC · ▶ actual
+        </span>
+      </div>
+      <div class="status-line" id="statusLive" aria-live="polite">conectando…</div>
+    </footer>
+  </section>
+
+  <!-- ==================== PANEL HISTÓRICO ==================== -->
+  <section id="panelHist" class="mode-panel" role="tabpanel" aria-labelledby="tabHist" hidden>
+
+    <!-- Barra superior: fecha/hora + navegación + replay -->
+    <div class="hist-toolbar">
+      <div class="date-group">
+        <label for="dtInput" class="sr-only">Fecha y hora</label>
+        <input type="datetime-local" id="dtInput" step="1" aria-label="Fecha y hora de referencia">
+        <button class="chip" id="btnGo" type="button" title="Ir al segundo seleccionado">Ir</button>
+        <button class="chip" id="btnNow" type="button" title="Ir a ahora">Ahora</button>
+        <button class="chip" id="btnFreeze" type="button" title="Congelar tiempo" aria-pressed="true">⏸ Congelado</button>
+      </div>
+
+      <div class="nav-group">
+        <button class="chip" id="btnBackBig" type="button" title="-1 min">⏮ -1m</button>
+        <button class="chip" id="btnBackSmall" type="button" title="-15 s">⏪ -15s</button>
+        <button class="chip" id="btnPlay" type="button" title="Play / Pausa replay">▶</button>
+        <button class="chip" id="btnFwdSmall" type="button" title="+15 s">⏩ +15s</button>
+        <button class="chip" id="btnFwdBig" type="button" title="+1 min">⏭ +1m</button>
+        <select id="speedSel" class="chip" aria-label="Velocidad de replay">
+          <option value="0.5">0.5×</option>
+          <option value="1" selected>1×</option>
+          <option value="2">2×</option>
+          <option value="4">4×</option>
+          <option value="8">8×</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Scrubber + timeline de eventos (marcadores 🔥/🟡/📊) -->
+    <div class="scrub-wrap">
+      <input type="range" id="scrub" min="0" max="100" value="100"
+             aria-label="Desplazar tiempo">
+      <div class="timeline-events" id="timelineEvents" aria-hidden="true"></div>
+    </div>
+
+    <div class="layout-main">
+
+      <!-- Tabla del footprint histórico -->
+      <div class="table-wrap" id="histTableWrap">
+        <div class="grid" id="histGrid" role="table" aria-label="Footprint histórico"></div>
+        <div class="empty-state" id="histEmpty" hidden>
+          <div class="spinner" aria-hidden="true"></div>
+          <p id="histEmptyTxt">Cargando…</p>
+        </div>
+      </div>
+
+      <!-- Termómetro histórico (misma estructura, IDs distintos) -->
+      <aside class="thermo" id="histThermo" aria-label="Termómetro de presión neta histórico">
+        <div class="thermo-cap">Presión Neta</div>
+
+        <div class="thermo-track thermo-acum" role="progressbar"
+             aria-label="Delta acumulado" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+          <div class="thermo-fill" id="thermoFillHist"></div>
+          <div class="thermo-center" aria-hidden="true"></div>
+        </div>
+
+        <div class="thermo-sub">Δ 6m</div>
+
+        <div class="thermo-track thermo-inst" role="progressbar"
+             aria-label="Delta instantáneo" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+          <div class="thermo-fill thermo-fill-inst" id="thermoFillInstHist"></div>
+          <div class="thermo-center" aria-hidden="true"></div>
+        </div>
+
+        <div class="thermo-sub">Δ 1s</div>
+
+        <div class="thermo-value" id="thermoValHist">0</div>
+        <div class="thermo-imb" id="thermoImbHist">—</div>
+        <div class="thermo-warn" id="thermoWarnHist" hidden>⚠ ABSORCIÓN</div>
+      </aside>
+    </div>
+
+    <footer class="panel-footer">
+      <div class="f-row">
+        <button class="chip" id="btnBucketHist" type="button" title="Casilla (B)">
+          Casilla: <b>20$</b>
+        </button>
+        <button class="chip" id="btnImbHist" type="button" title="Imbalance (I)">
+          Imb: <b>diag</b>
+        </button>
+        <button class="chip" id="btnMinHist" type="button" title="Mínimo USD por lado (M)">
+          Mín: <b>25k</b>
+        </button>
+        <span class="spacer"></span>
+        <span class="legend">
+          A/← −15s · D/→ +15s · S/↓ −1m · W/↑ +1m · Espacio replay
+        </span>
+      </div>
+      <div class="status-line" id="statusHist" aria-live="polite">—</div>
+    </footer>
+  </section>
+
+</main>
+
+<!-- ==========================================================================
+     TOASTS — Notificaciones flotantes
+     ========================================================================== -->
+<div id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+<!-- ==========================================================================
+     TEMPLATES — Clonados por JS para construir filas sin crear strings
+     ========================================================================== -->
+
+<!-- Cabecera de la tabla del footprint -->
+<template id="tplHead">
+  <div class="row row-head" role="row">
+    <div class="gh gh-imb" role="columnheader">Imb Vta</div>
+    <div class="gh gh-sell" role="columnheader">Venta $</div>
+    <div class="gh gh-delta" role="columnheader">Δ $</div>
+    <div class="gh gh-price" role="columnheader">Precio</div>
+    <div class="gh gh-buy" role="columnheader">Compra $</div>
+    <div class="gh gh-imb" role="columnheader">Imb Cpa</div>
+    <div class="gh gh-bar" role="columnheader">Ratio</div>
+  </div>
+</template>
+
+<!-- Fila del footprint -->
+<template id="tplRow">
+  <div class="row" role="row" data-k="row">
+    <div class="c c-imb c-imbL" role="cell" data-k="imbL"></div>
+    <div class="c c-sell" role="cell" data-k="sell">
+      <div class="bar-side" data-k="sellBar"></div>
+      <span class="lbl" data-k="sellLbl">·</span>
+    </div>
+    <div class="c c-delta" role="cell" data-k="delta">
+      <span class="lbl" data-k="deltaLbl">0</span>
+    </div>
+    <div class="c c-price" role="cell" data-k="price"></div>
+    <div class="c c-buy" role="cell" data-k="buy">
+      <div class="bar-side" data-k="buyBar"></div>
+      <span class="lbl" data-k="buyLbl">·</span>
+    </div>
+    <div class="c c-imb c-imbR" role="cell" data-k="imbR"></div>
+    <div class="c c-bar" role="cell" data-k="bar">
+      <div class="ratio" data-k="ratio">
+        <div class="ratio-buy" data-k="ratioBuy"></div>
+        <div class="ratio-sell" data-k="ratioSell"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<!-- Punto de evento en la timeline del histórico -->
+<template id="tplTimelineDot">
+  <span class="tl-dot" aria-hidden="true"></span>
+</template>
+
+</body>
+</html>

@@ -1,0 +1,168 @@
+/* ============================================================================
+   DESIGN.CSS — Footprint BTCUSDT · Order Flow Pro
+   Fuente única de verdad para tokens de diseño: colores, tipografía, medidas,
+   sombras, radios y animaciones globales. No contiene layout ni media queries.
+   ============================================================================ */
+
+/* ============ 1. TOKENS — TEMA OSCURO (default) ============ */
+:root{
+  /* --- Superficies --- */
+  --bg:            #000000;
+  --bg-soft:       #050608;
+  --surface:       #0a0b0e;
+  --surface-2:     #12141a;
+  --surface-3:     #1a1d26;
+  --surface-4:     #22252f;
+  --border:        #1c1f28;
+  --border-2:      #2e323f;
+
+  /* --- Texto --- */
+  --text:          #e6e8ee;
+  --text-dim:      #8a90a0;
+  --text-mute:     #5c6070;
+  --text-faint:    #3a3e4a;
+
+  /* --- Semánticos --- */
+  --green:         #16c784;
+  --green-soft:    rgba(22,199,132,.14);
+  --red:           #ea3943;
+  --red-soft:      rgba(234,57,67,.14);
+  --yellow:        #f0b90b;
+  --yellow-soft:   rgba(240,185,11,.14);
+  --cyan:          #22d3ee;
+  --cyan-soft:     rgba(34,211,238,.12);
+  --blue:          #3b82f6;
+
+  /* --- Heatmap (canales RGB para usar en rgba()) --- */
+  --heat-buy:      22, 199, 132;
+  --heat-sell:     234, 57, 67;
+
+  /* --- Tipografía --- */
+  --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono",
+          Consolas, "Liberation Mono", monospace;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+          Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* --- Medidas estructurales --- */
+  --radius:        10px;
+  --radius-sm:     6px;
+  --shadow:        0 1px 0 rgba(255,255,255,.03), 0 8px 24px rgba(0,0,0,.4);
+
+  /* --- Grid del footprint --- */
+  --col-imb:       52px;
+  --col-num:       62px;
+  --col-delta:     62px;
+  --col-price:     82px;
+  --col-bar:       46px;
+  --row-h:         24px;
+
+  /* --- Termómetro --- */
+  --thermo-w:      88px;
+  --thermo-track-w:18px;
+}
+
+/* ============ 2. TEMA CLARO ============ */
+[data-theme="light"]{
+  /* --- Superficies --- */
+  --bg:            #f6f7f9;
+  --bg-soft:       #eef0f4;
+  --surface:       #ffffff;
+  --surface-2:     #f1f3f7;
+  --surface-3:     #e6e9f0;
+  --surface-4:     #d9dde6;
+  --border:        #e0e3ea;
+  --border-2:      #cfd4de;
+
+  /* --- Texto --- */
+  --text:          #0f1218;
+  --text-dim:      #4a5060;
+  --text-mute:     #7a8090;
+  --text-faint:    #b0b6c2;
+
+  /* --- Semánticos --- */
+  --green:         #059669;
+  --green-soft:    rgba(5,150,105,.12);
+  --red:           #dc2626;
+  --red-soft:      rgba(220,38,38,.12);
+  --yellow:        #d97706;
+  --yellow-soft:   rgba(217,119,6,.12);
+  --cyan:          #0891b2;
+  --cyan-soft:     rgba(8,145,178,.12);
+  --blue:          #2563eb;
+
+  /* --- Heatmap --- */
+  --heat-buy:      5, 150, 105;
+  --heat-sell:     220, 38, 38;
+
+  /* --- Sombra más sutil en tema claro --- */
+  --shadow:        0 1px 0 rgba(0,0,0,.03), 0 6px 20px rgba(0,0,0,.06);
+}
+
+/* ============ 3. ANIMACIONES GLOBALES ============ */
+
+/* Punto de conexión EN VIVO pulsante */
+@keyframes pulse{
+  0%, 100%{ box-shadow: 0 0 0 0 rgba(22,199,132,.65); }
+  50%     { box-shadow: 0 0 0 6px rgba(22,199,132,0); }
+}
+
+/* Flash de celda al ganar liquidez (verde o rojo) */
+@keyframes flashBuy{
+  from{ background-color: var(--green-soft); }
+  to  { background-color: transparent; }
+}
+@keyframes flashSell{
+  from{ background-color: var(--red-soft); }
+  to  { background-color: transparent; }
+}
+
+/* Spinner de carga */
+@keyframes spin{
+  to{ transform: rotate(360deg); }
+}
+
+/* Aparición de toast */
+@keyframes toastIn{
+  from{ opacity: 0; transform: translateY(8px); }
+  to  { opacity: 1; transform: none; }
+}
+
+/* Advertencia de absorción en el termómetro */
+@keyframes warnPulse{
+  0%, 100%{ opacity: 1; }
+  50%     { opacity: .55; }
+}
+
+/* ============ 4. ACCESIBILIDAD ============ */
+
+/* Respeta la preferencia de movimiento reducido */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+  .dot.live{
+    animation: none;
+    box-shadow: 0 0 0 2px rgba(22,199,132,.25);
+  }
+  .thermo-warn{
+    animation: none;
+  }
+}
+
+/* Alto contraste para quienes lo piden */
+@media (prefers-contrast: more){
+  :root{
+    --text-dim:  #a8aebd;
+    --text-mute: #8a90a0;
+    --border:    #3a3e4a;
+    --border-2:  #4a4e5a;
+  }
+  [data-theme="light"]{
+    --text-dim:  #2a303a;
+    --text-mute: #4a5060;
+    --border:    #b0b6c2;
+    --border-2:  #8a90a0;
+  }
+}

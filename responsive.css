@@ -1,0 +1,615 @@
+/* ============================================================================
+   RESPONSIVE.CSS — Footprint BTCUSDT · Order Flow Pro
+   Adaptaciones por breakpoint. No redefine tokens ni layout base:
+   solo modifica lo necesario para cada tamaño de pantalla.
+   Orden: tablet → móvil → móvil pequeño → landscape móvil → touch.
+   ============================================================================ */
+
+/* ============ 1. TABLET (≤ 1023px) ============ */
+@media (max-width: 1023px){
+  :root{
+    --col-imb:   48px;
+    --col-num:   56px;
+    --col-delta: 56px;
+    --col-price: 76px;
+    --col-bar:   40px;
+    --row-h:     22px;
+    --thermo-w:  72px;
+    --thermo-track-w: 14px;
+  }
+
+  .grid{
+    font-size: 11px;
+  }
+  .gh{
+    font-size: 9px;
+    padding: 7px 3px;
+  }
+  .c{
+    padding: 2px 3px;
+  }
+
+  .metric{
+    padding-right: 8px;
+  }
+  .metric-label{
+    font-size: 9px;
+  }
+  .metric-value{
+    font-size: 11px;
+  }
+  .metric-value.h-price{
+    font-size: 15px;
+  }
+
+  .thermo{
+    width: var(--thermo-w);
+    padding: 8px 0;
+  }
+  .thermo-track{
+    width: var(--thermo-track-w);
+  }
+  .thermo-acum{
+    min-height: 100px;
+    max-height: 200px;
+  }
+  .thermo-inst{
+    min-height: 50px;
+    max-height: 90px;
+  }
+
+  .h-symbol small{
+    display: none;
+  }
+}
+
+/* ============ 2. MÓVIL (≤ 767px) ============ */
+@media (max-width: 767px){
+  :root{
+    --col-imb:   42px;
+    --col-num:   52px;
+    --col-delta: 52px;
+    --col-price: 70px;
+    --col-bar:   34px;
+    --row-h:     21px;
+    --thermo-w:  60px;
+    --thermo-track-w: 12px;
+  }
+
+  /* --- Header compacto --- */
+  #app-header{
+    padding: 6px 8px 8px;
+    gap: 5px;
+  }
+  .h-row{
+    gap: 8px;
+  }
+  .h-row-1{
+    gap: 6px;
+  }
+  .h-symbol{
+    font-size: 13px;
+  }
+  .h-symbol small{
+    display: none;
+  }
+  .h-status-txt{
+    font-size: 10px;
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .h-clock{
+    padding: 3px 8px;
+    font-size: 11px;
+    gap: 4px;
+  }
+  .h-clock-utc{
+    display: none;
+  }
+  .icon-btn{
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+  }
+
+  /* --- Métricas con scroll horizontal --- */
+  .h-row-2{
+    gap: 4px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .h-row-2::-webkit-scrollbar{
+    height: 0;
+  }
+  .metric{
+    flex-shrink: 0;
+    padding-right: 8px;
+    padding-left: 2px;
+  }
+  .metric-label{
+    font-size: 9px;
+  }
+  .metric-value{
+    font-size: 11px;
+  }
+  .metric-value.h-price{
+    font-size: 14px;
+  }
+  .metric-instant .metric-value{
+    font-size: 11px;
+  }
+  .metric-coverage{
+    flex-shrink: 0;
+    padding: 3px 8px;
+  }
+  .cov-txt{
+    font-size: 9px;
+  }
+
+  /* --- Pills con scroll horizontal --- */
+  .h-row-3{
+    gap: 4px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .h-row-3::-webkit-scrollbar{
+    height: 0;
+  }
+  .pill{
+    flex-shrink: 0;
+    padding: 4px 8px;
+    font-size: 10px;
+    min-height: 26px;
+  }
+
+  /* --- Tabs --- */
+  .mode-tabs{
+    padding: 4px 8px;
+  }
+  .mode-tabs [role="tab"]{
+    padding: 5px 10px;
+    font-size: 10px;
+    min-height: 28px;
+    flex: 1;
+  }
+
+  /* --- Tabla compacta con scroll horizontal --- */
+  .grid{
+    font-size: 10.5px;
+    min-width: 400px;
+    margin: 4px;
+  }
+  .gh{
+    font-size: 8.5px;
+    padding: 6px 2px;
+  }
+  .c{
+    padding: 1px 3px;
+  }
+  .c-imb{
+    font-size: 9.5px;
+  }
+  .c-price{
+    font-size: 10.5px;
+  }
+
+/* --- Termómetro como barra horizontal (visible siempre) --- */
+.layout-main{
+  flex-direction: column;
+}
+
+.thermo{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  height: auto;
+  min-height: 34px;
+  padding: 4px 8px;
+  gap: 6px;
+  border-left: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  order: -1; /* Lo manda al principio del layout column */
+  flex-shrink: 0;
+}
+
+/* Ocultamos la etiqueta larga "Presión Neta" en móvil */
+.thermo-cap{
+  display: none;
+}
+
+/* Contenedores de las dos barras */
+.thermo-acum,
+.thermo-inst{
+  flex: 1;
+  width: auto;
+  height: 10px;
+  min-height: 10px;
+  max-height: 10px;
+  border-radius: 5px;
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+/* Las etiquetas "Δ 6m" y "Δ 1s" se hacen pequeñas */
+.thermo-sub{
+  display: inline;
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--text-mute);
+  letter-spacing: .04em;
+  margin: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Los fills se vuelven horizontales */
+.thermo-fill{
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  right: auto;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(to right,
+    var(--red) 0%, var(--red) 45%,
+    var(--green) 55%, var(--green) 100%);
+  transition: width .3s cubic-bezier(.4,0,.2,1);
+}
+.thermo-fill-inst{
+  transition: width .15s cubic-bezier(.4,0,.2,1);
+}
+
+/* El centro vertical se convierte en marcador horizontal */
+.thermo-center{
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  height: auto;
+  background: var(--text-mute);
+  z-index: 2;
+  opacity: .55;
+}
+
+/* Valores numéricos */
+.thermo-value{
+  font-size: 10px;
+  font-weight: 700;
+  margin: 0;
+  padding: 0 4px;
+  flex-shrink: 0;
+  min-width: 48px;
+  text-align: right;
+}
+
+/* El imbalance general se oculta por espacio */
+.thermo-imb{
+  display: none;
+}
+
+/* El aviso de absorción */
+.thermo-warn{
+  font-size: 8px;
+  font-weight: 700;
+  padding: 2px 5px;
+  margin: 0;
+  background: var(--yellow-soft);
+  color: var(--yellow);
+  border-radius: 4px;
+  flex-shrink: 0;
+  animation: warnPulse 1.4s ease-in-out infinite;
+}
+.thermo-warn[hidden]{
+  display: none !important;
+}
+
+  /* --- Histórico toolbar compacto --- */
+  .hist-toolbar{
+    padding: 6px 8px;
+    gap: 6px;
+  }
+  .date-group,
+  .nav-group{
+    gap: 4px;
+  }
+  .chip{
+    padding: 4px 8px;
+    font-size: 10px;
+    min-height: 28px;
+  }
+  input[type="datetime-local"]{
+    padding: 4px 6px;
+    font-size: 10px;
+    min-height: 28px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .scrub-wrap{
+    padding: 4px 8px 6px;
+  }
+  input[type="range"]{
+    height: 5px;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    width: 18px;
+    height: 18px;
+  }
+  input[type="range"]::-moz-range-thumb{
+    width: 18px;
+    height: 18px;
+  }
+  .tl-dot{
+    width: 3px;
+    height: 3px;
+  }
+  .tl-dot[data-type="stack"]{
+    width: 5px;
+    height: 5px;
+  }
+
+  /* --- Footer --- */
+  .panel-footer{
+    padding: 6px 8px;
+    padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+  }
+  .f-row{
+    gap: 4px;
+  }
+  .legend{
+    display: none;
+  }
+  .status-line{
+    font-size: 9px;
+  }
+
+  /* --- Toasts ocupan el ancho --- */
+  #toasts{
+    bottom: 8px;
+    right: 8px;
+    left: 8px;
+    max-width: none;
+  }
+  .toast{
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+}
+
+/* ============ 3. MÓVIL PEQUEÑO (≤ 380px) ============ */
+@media (max-width: 380px){
+  :root{
+    --col-imb:   38px;
+    --col-num:   48px;
+    --col-delta: 48px;
+    --col-price: 64px;
+    --col-bar:   30px;
+    --row-h:     20px;
+  }
+
+  .grid{
+    min-width: 350px;
+    font-size: 10px;
+  }
+  .metric-value.h-price{
+    font-size: 13px !important;
+  }
+  .h-clock{
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+  .pill{
+    padding: 3px 6px;
+    font-size: 9.5px;
+  }
+  .chip{
+    padding: 3px 6px;
+    font-size: 9.5px;
+    min-height: 26px;
+  }
+  .mode-tabs [role="tab"]{
+    font-size: 9.5px;
+    padding: 4px 8px;
+  }
+}
+
+/* ============ 4. LANDSCAPE MÓVIL (baja altura) ============ */
+@media (max-height: 500px) and (orientation: landscape){
+  #app-header{
+    padding: 4px 8px;
+    gap: 3px;
+  }
+  .h-row-2,
+  .h-row-3{
+    padding-top: 0;
+    overflow: visible;
+    flex-wrap: nowrap;
+  }
+  .metric-label{
+    display: none;
+  }
+  .metric{
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  .metric-value{
+    font-size: 11px;
+  }
+
+  .mode-tabs{
+    padding: 2px 8px;
+  }
+  .mode-tabs [role="tab"]{
+    min-height: 26px;
+    font-size: 10px;
+  }
+
+  .hist-toolbar{
+    padding: 4px 8px;
+  }
+  .scrub-wrap{
+    padding: 3px 8px 4px;
+  }
+
+  .thermo{
+    display: none;
+  }
+
+  .panel-footer{
+    padding: 4px 8px;
+  }
+  .status-line{
+    display: none;
+  }
+}
+
+/* ============ 5. TOUCH (hover: none) ============ */
+@media (hover: none){
+  /* Desactiva hover que en touch no aplica y causa "pegajosidad" */
+  .pill:hover,
+  .chip:hover,
+  .icon-btn:hover,
+  .mode-tabs [role="tab"]:hover{
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text-dim);
+  }
+
+  /* Áreas de toque mínimas recomendadas por accesibilidad (44x44) */
+  .chip,
+  .pill,
+  .icon-btn{
+    min-height: 32px;
+  }
+
+  /* Prevenir zoom accidental en el input en iOS */
+  input[type="datetime-local"],
+  select.chip{
+    font-size: 16px;
+  }
+
+  /* Feedback de toque en lugar de hover */
+  .chip:active,
+  .pill:active{
+    transform: scale(.96);
+  }
+}
+
+/* ============ 6. ORIENTACIÓN VERTICAL ESTRECHA (≤ 360px) ============ */
+@media (max-width: 360px) and (orientation: portrait){
+  .grid{
+    min-width: 340px;
+    font-size: 9.5px;
+  }
+  .gh{
+    font-size: 8px;
+    padding: 5px 1px;
+  }
+  .c{
+    padding: 1px 2px;
+  }
+  .c-imb{
+    font-size: 9px;
+  }
+  .thermo{
+    display: none;
+  }
+}
+
+/* ============ 7. PANTALLAS GRANDES (≥ 1440px) ============ */
+@media (min-width: 1440px){
+  :root{
+    --col-imb:   58px;
+    --col-num:   70px;
+    --col-delta: 70px;
+    --col-price: 92px;
+    --col-bar:   52px;
+    --row-h:     26px;
+    --thermo-w:  100px;
+  }
+
+  .grid{
+    font-size: 13px;
+  }
+  .gh{
+    font-size: 11px;
+    padding: 10px 6px;
+  }
+  .c-imb{
+    font-size: 12px;
+  }
+  .metric-value{
+    font-size: 13px;
+  }
+  .metric-value.h-price{
+    font-size: 20px;
+  }
+}
+
+/* ============ 8. PANTALLAS ULTRA GRANDES (≥ 1920px) ============ */
+@media (min-width: 1920px){
+  :root{
+    --col-imb:   64px;
+    --col-num:   80px;
+    --col-delta: 80px;
+    --col-price: 104px;
+    --col-bar:   58px;
+    --row-h:     28px;
+    --thermo-w:  110px;
+  }
+
+  body{
+    font-size: 14px;
+  }
+  .grid{
+    font-size: 14px;
+  }
+  .gh{
+    font-size: 12px;
+  }
+  .c-imb{
+    font-size: 13px;
+  }
+}
+
+/* ============ 9. IMPRESIÓN (bonus) ============ */
+@media print{
+  #app-header,
+  .mode-tabs,
+  .panel-footer,
+  .thermo,
+  #toasts,
+  .scrub-wrap,
+  .hist-toolbar{
+    display: none !important;
+  }
+  body{
+    background: #ffffff;
+    color: #000000;
+  }
+  .grid{
+    background: #ffffff;
+    box-shadow: none;
+    border: 1px solid #000000;
+  }
+  .c{
+    background: #ffffff !important;
+    color: #000000 !important;
+    border-bottom: 1px solid #cccccc !important;
+  }
+  .row.current > .c{
+    background: #f0f0f0 !important;
+  }
+}
